@@ -72,14 +72,21 @@ extension _TinyArray: RandomAccessCollection {
 }
 
 extension _TinyArray {
+  /// Designated init that owns direct property assignment.
+  /// Must not be @inlinable under library evolution — stored property layout is opaque to clients.
+  @usableFromInline
+  init(_storage storage: Storage) {
+    self.storage = storage
+  }
+
   @inlinable
   init(_ elements: some Sequence<Element>) {
-    self.storage = .init(elements)
+    self.init(_storage: .init(elements))
   }
 
   @inlinable
   init() {
-    self.storage = .init()
+    self.init(_storage: .init())
   }
 
   @inlinable

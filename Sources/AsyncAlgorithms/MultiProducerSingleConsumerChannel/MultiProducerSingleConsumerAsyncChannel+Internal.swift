@@ -83,7 +83,7 @@ extension MultiProducerSingleConsumerAsyncChannel {
 
     @usableFromInline
     var description: String {
-      switch consume self {
+      switch self {
       case .watermark(let strategy):
         return strategy.description
       }
@@ -91,7 +91,7 @@ extension MultiProducerSingleConsumerAsyncChannel {
 
     @inlinable
     mutating func didSend(elements: Deque<SendableConsumeOnceBox<Element>>.SubSequence) -> Bool {
-      switch consume self {
+      switch self {
       case .watermark(var strategy):
         let result = strategy.didSend(elements: elements)
         self = .watermark(strategy)
@@ -101,7 +101,7 @@ extension MultiProducerSingleConsumerAsyncChannel {
 
     @inlinable
     mutating func didConsume(element: SendableConsumeOnceBox<Element>) -> Bool {
-      switch consume self {
+      switch self {
       case .watermark(var strategy):
         let result = strategy.didConsume(element: element)
         self = .watermark(strategy)
@@ -118,11 +118,20 @@ extension MultiProducerSingleConsumerAsyncChannel {
     @usableFromInline
     let _stateMachine: Mutex<_StateMachine>
 
-    @inlinable
+    @usableFromInline
     init(
+      _stateMachine: consuming Mutex<_StateMachine>
+    ) {
+      self._stateMachine = _stateMachine
+    }
+
+    @inlinable
+    convenience init(
       backpressureStrategy: _InternalBackpressureStrategy
     ) {
-      self._stateMachine = Mutex<_StateMachine>(_StateMachine(backpressureStrategy: backpressureStrategy))
+      self.init(
+        _stateMachine: Mutex<_StateMachine>(_StateMachine(backpressureStrategy: backpressureStrategy))
+      )
     }
 
     func setOnTerminationCallback(
@@ -510,6 +519,7 @@ extension MultiProducerSingleConsumerAsyncChannel {
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension MultiProducerSingleConsumerAsyncChannel._Storage {
   /// The state machine of the channel.
+  @frozen
   @usableFromInline
   struct _StateMachine: ~Copyable {
     /// The state machine's current state.
@@ -1556,7 +1566,7 @@ extension MultiProducerSingleConsumerAsyncChannel._Storage._StateMachine {
         "backpressure:\(self.backpressureStrategy.description) iteratorInitialized:\(self.iteratorInitialized) buffer:\(self.buffer.count) consumerContinuation:\(self.consumerContinuation == nil) producerContinuations:\(self.suspendedProducers.count) cancelledProducers:\(self.cancelledAsyncProducers.count) hasOutstandingDemand:\(self.hasOutstandingDemand)"
       }
 
-      @inlinable
+      @usableFromInline
       init(
         backpressureStrategy: MultiProducerSingleConsumerAsyncChannel._InternalBackpressureStrategy,
         iteratorInitialized: Bool,
@@ -1632,7 +1642,7 @@ extension MultiProducerSingleConsumerAsyncChannel._Storage._StateMachine {
         "iteratorInitialized:\(self.iteratorInitialized) buffer:\(self.buffer.count) failure:\(self.failure == nil)"
       }
 
-      @inlinable
+      @usableFromInline
       init(
         iteratorInitialized: Bool,
         sequenceInitialized: Bool,
@@ -1676,7 +1686,7 @@ extension MultiProducerSingleConsumerAsyncChannel._Storage._StateMachine {
         "iteratorInitialized:\(self.iteratorInitialized) sourceFinished:\(self.sourceFinished)"
       }
 
-      @inlinable
+      @usableFromInline
       init(
         iteratorInitialized: Bool,
         sequenceInitialized: Bool,
@@ -1725,7 +1735,7 @@ struct SendableConsumeOnceBox<Wrapped> {
   @usableFromInline
   var wrapped: Optional<Wrapped>
 
-  @inlinable
+  @usableFromInline
   init(wrapped: consuming sending Wrapped) {
     self.wrapped = .some(wrapped)
   }
